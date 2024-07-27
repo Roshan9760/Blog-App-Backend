@@ -32,3 +32,34 @@ exports.createComment = async (req, res) => {
         });
     }
 };
+
+
+exports.removeComment = async (req, res) => {
+  try {
+    const { commentId, postId } = req.body;
+
+    // Remove the comment from the comments collection
+    const deletedComment = await Comment.findByIdAndDelete(commentId);
+
+    if (!deletedComment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+
+    // Remove the comment from the post's comments array
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      { $pull: { comments: commentId } }, 
+      { new: true }
+    )
+      .populate("comments") 
+      .exec();
+
+    res.json({
+      post: updatedPost,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: "Error While Removing comment",
+    });
+  }
+};
